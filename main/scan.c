@@ -21,8 +21,10 @@
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 
-# define BEACON_NUM 3
-# define BEACON_SSID_MAX_LEN 32
+#define BEACON_NUM 3
+#define BEACON_SSID_MAX_LEN 32
+// A magic number to indicate if no rssi value was measured for a beacon.
+#define OUT_OF_RANGE 42
 
 static const char *TAG = "scan";
 
@@ -76,22 +78,24 @@ static void wifi_scan(void)
     while (1) {
         for (int i = 0; i < BEACON_NUM; ++i) {
             // Want to selectively scan.
-
             scan_conf.ssid = BEACON_SSIDS[i];
+
+            // Holds the results of our wifi Access Point (AP) scan.
             wifi_ap_record_t ap_info;
             esp_wifi_scan_start(&scan_conf, true);
             
             esp_err_t res = esp_wifi_scan_get_ap_record(&ap_info);
             if (res != ESP_OK) {
-                if (res == ESP_FAIL) {
-                    ESP_LOGI(TAG, "Failed to scan for SSID: [%s]\n", scan_conf.ssid);
-                }
-                continue;
-            }
+                // Treat all errors as failure.
+                // NOTE: ESP_LOGI seems to add a newline character to the msg, 
+                // so don't add a newline yourself.
 
-            ESP_LOGI(TAG, "SSID \t\t%s", ap_info.ssid);
-            ESP_LOGI(TAG, "RSSI \t\t%d", ap_info.rssi);
-            ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info.primary);
+                // Obviously, since we haven't found an entry, can't use 
+                // ap_info.ssid. Use BEACON_SSIDS[i] instead.
+                ESP_LOGI(TAG, "ssid:%s;rssi:%d", BEACON_SSIDS[i], OUT_OF_RANGE);
+            } else {
+                ESP_LOGI(TAG, "ssid:%s;rssi:%d", ap_info.ssid, ap_info.rssi);
+            }
         }
 
         // Disable sleep here? Not sure what this is for, the 
