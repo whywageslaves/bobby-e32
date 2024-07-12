@@ -66,7 +66,8 @@ while True:
             location_id = "q"
             break
         try:
-            location_id = int(usr_input)
+            # Convert to str (to comply with json.)
+            location_id = str(int(usr_input))
         except:
             pass
 
@@ -78,6 +79,7 @@ while True:
     # current location.     
     print(f"Location: [{location_id}] - Generating samples.")
     beacon_rssi_data = get_beacon_rssi_data(DATA_SAMPLE_NUM)
+    location_beacon_rssi_data = { location_id: beacon_rssi_data }
     print(f"Location: [{location_id}] - Finished sample collection.")
     print(f"Beacon data: {beacon_rssi_data}")
 
@@ -89,7 +91,7 @@ while True:
     with open(output_filename, "r") as infile:
         json_data = json.load(infile)
         # print(f"old json: {json_data}")
-        json_data.append(beacon_rssi_data)
+        json_data.append(location_beacon_rssi_data)
         # print(f"modified json: {json_data}")
         with open(output_filename, "w") as outfile:
             json.dump(json_data, outfile)
