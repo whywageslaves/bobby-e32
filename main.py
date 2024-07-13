@@ -3,11 +3,11 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError, NoR
 
 
 # How to use:
-# 1. Install awscli
-# 2. Setup Access Key and Secrets on AWS IAM
-# 3. aws configure on laptop
+# 1. Install `awscli`
+# 2. Go to AWS and setup Access Key and Secrets on IAM
+# 3. Run `aws configure` on laptop with the information from previous step
 # 4. Add your phone number on the AWS SNS sandbox
-# 5. Run the method below with correct phone number
+# 5. Run the method below with your phone number
 
 def send_sms(phone_number, message):
     sns = boto3.client('sns', region_name='us-east-1')
