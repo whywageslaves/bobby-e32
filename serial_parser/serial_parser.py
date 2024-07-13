@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 
 # The port that the ESP-32 is connected to.
-PORT = "COM5"
+PORT = "COM15"
 
 # Regex pattern to extract ssid and rssi data for a given beacon.
 DATA_REGEX = r"ssid:(bob[123]);rssi:(-?\d{1,3})"
