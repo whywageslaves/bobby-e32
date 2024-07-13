@@ -21,8 +21,10 @@
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 
-# define BEACON_NUM 3
-# define BEACON_SSID_MAX_LEN 32
+#define BEACON_NUM 3
+#define BEACON_SSID_MAX_LEN 32
+// A magic number to indicate if no rssi value was measured for a beacon.
+#define OUT_OF_RANGE 42
 
 static const char *TAG = "scan";
 
@@ -37,43 +39,25 @@ static void wifi_scan(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // uint16_t number = DEFAULT_SCAN_LIST_SIZE;
-    // wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
-
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
     // Find currently configured maximum transmit power.
-    int8_t prev_power;
-    ESP_ERROR_CHECK(esp_wifi_get_max_tx_power(&prev_power));
-    ESP_LOGI(TAG, "Previous tx power: [%d]\n", prev_power);
-
-    // Retrieve current country info.
-    wifi_country_t country_info;
-    ESP_ERROR_CHECK(esp_wifi_get_country(&country_info));
-    ESP_LOGI(TAG, "Current country [%c%c%c]: - Max tx power: [%d]\n", 
-                country_info.cc[0], country_info.cc[1], country_info.cc[2], country_info.max_tx_power);
-
-    // Set to maximum transmit power. Note that it will cap itself to whatever 
-    // the configured country's max_tx_power is.
-    const int8_t max_tx_power = 80;
-    ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(max_tx_power));
-
-    int8_t curr_power;
-    ESP_ERROR_CHECK(esp_wifi_get_max_tx_power(&curr_power));
-    ESP_LOGI(TAG, "Current tx power: [%d]\n", curr_power);
+    int8_t tx_power;
+    ESP_ERROR_CHECK(esp_wifi_get_max_tx_power(&tx_power));
+    ESP_LOGI(TAG, "Max tx power: [%d]\n", tx_power);
 
     // Change power mode to non_power saving - dunno if this changes anything.
     const wifi_ps_type_t ps_mode = WIFI_PS_NONE;
     ESP_ERROR_CHECK(esp_wifi_set_ps(ps_mode));
 
-
     uint8_t BEACON_SSIDS[BEACON_NUM][BEACON_SSID_MAX_LEN] = { 
-        {'b', 'o', 'b', 'b', 'y', '-', '1', '\0'},
-        {'b', 'o', 'b', 'b', 'y', '-', '2', '\0'},
-        {'b', 'o', 'b', 'b', 'y', '-', '3', '\0'},
+        {'b', 'o', 'b', '1', '\0'},
+        {'b', 'o', 'b', '2', '\0'},
+        {'b', 'o', 'b', '3', '\0'},
     };
 
+    // Scan time per channel, in millis.
     const wifi_scan_time_t scan_time = {
         .active = {
             .min = 0,
@@ -94,23 +78,24 @@ static void wifi_scan(void)
     while (1) {
         for (int i = 0; i < BEACON_NUM; ++i) {
             // Want to selectively scan.
-
             scan_conf.ssid = BEACON_SSIDS[i];
+
+            // Holds the results of our wifi Access Point (AP) scan.
             wifi_ap_record_t ap_info;
             esp_wifi_scan_start(&scan_conf, true);
             
-            // auto res =;
             esp_err_t res = esp_wifi_scan_get_ap_record(&ap_info);
             if (res != ESP_OK) {
-                if (res == ESP_FAIL) {
-                    ESP_LOGI(TAG, "Failed to scan for SSID: [%s]\n", scan_conf.ssid);
-                }
-                continue;
-            }
+                // Treat all errors as failure.
+                // NOTE: ESP_LOGI seems to add a newline character to the msg, 
+                // so don't add a newline yourself.
 
-            ESP_LOGI(TAG, "SSID \t\t%s", ap_info.ssid);
-            ESP_LOGI(TAG, "RSSI \t\t%d", ap_info.rssi);
-            ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info.primary);
+                // Obviously, since we haven't found an entry, can't use 
+                // ap_info.ssid. Use BEACON_SSIDS[i] instead.
+                ESP_LOGI(TAG, "ssid:%s;rssi:%d", BEACON_SSIDS[i], OUT_OF_RANGE);
+            } else {
+                ESP_LOGI(TAG, "ssid:%s;rssi:%d", ap_info.ssid, ap_info.rssi);
+            }
         }
 
         // Disable sleep here? Not sure what this is for, the 
