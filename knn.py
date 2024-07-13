@@ -112,9 +112,9 @@ if __name__ == "__main__":
     (RSSI_test, test_mapping) = convert_from_json(test_json_data)
     # print(RSSI_test)
 
-    for test_location_data in RSSI_test:
+    for i, test_location_data in enumerate(RSSI_test, start=1):
         (distances, indices) = knn(RSSI_train, np.array([test_location_data]), 3)
-        print(f"Results for test location: {test_location_data}")
+        print(f"[{i}] Results for test location: {test_location_data}")
         print(f"Closest points are: {[mapping[idx] for idx in indices[0]]}")
         print(f"Distances: {distances}")
         print()
