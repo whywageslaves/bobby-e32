@@ -83,8 +83,8 @@ static void wifi_scan(void)
             // Holds the results of our wifi Access Point (AP) scan.
             wifi_ap_record_t ap_info;
             esp_wifi_scan_start(&scan_conf, true);
-            
-            esp_err_t res = esp_wifi_scan_get_ap_record(&ap_info);
+            uint16_t record_num = 1;
+            esp_err_t res = esp_wifi_scan_get_ap_records(&record_num, &ap_info);
             if (res != ESP_OK) {
                 // Treat all errors as failure.
                 // NOTE: ESP_LOGI seems to add a newline character to the msg, 
@@ -97,10 +97,6 @@ static void wifi_scan(void)
                 ESP_LOGI(TAG, "ssid:%s;rssi:%d", ap_info.ssid, ap_info.rssi);
             }
         }
-
-        // Disable sleep here? Not sure what this is for, the 
-        // actual scan function is blocking anyways.
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
