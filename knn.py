@@ -99,13 +99,26 @@ def convert_from_json(json_data: dict):
     return (np.array(formatted), mapping)
         
 if __name__ == "__main__":
-    with open("sample-data-harry-p-fingerprinting-1.json", 'r') as file:
-        json_data = json.load(file)
+    with open("sample-data-harry-p-fingerprinting-1.json", "r") as file:
+        train_json_data = json.load(file)
     
-    (RSSI_train, mapping) = convert_from_json(json_data)
+    (RSSI_train, mapping) = convert_from_json(train_json_data)
     # print(RSSI_train, mapping)
+    print(mapping)
 
-    # RSSI_train = np.array([[-60, -65, -70], [-55, -60, -75], [-50, -55, -80]])
-    RSSI_test = np.array([[-58, -63, -68], [-53, -58, -73]])
+    with open("sample-data-harry-p-validating-1.json", "r") as file:
+        test_json_data = json.load(file)
 
-    pprint(knn(RSSI_train, RSSI_test, 3))
+    (RSSI_test, test_mapping) = convert_from_json(test_json_data)
+    # print(RSSI_test)
+
+    for test_location_data in RSSI_test:
+        (distances, indices) = knn(RSSI_train, np.array([test_location_data]), 3)
+        print(f"Results for test location: {test_location_data}")
+        print(f"Closest points are: {[mapping[idx] for idx in indices[0]]}")
+        print(f"Distances: {distances}")
+        print()
+
+# Unused code:
+# RSSI_train = np.array([[-60, -65, -70], [-55, -60, -75], [-50, -55, -80]])
+# RSSI_test = np.array([[-58, -63, -68], [-53, -58, -73]])
