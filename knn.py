@@ -49,5 +49,6 @@ if __name__ == "__main__":
     for i in range(len(X_test)):
         print(f'Test Location: {X_test[i]}')
         for j in range(k):
-            print(f'Closest Location {j}: {X_train[indices[i][j]]} ({rename_label(indices[i][j])})')
+            closest_label = y_train[indices[i][j]]
+            print(f'Closest Location {j}: {X_train[indices[i][j]]} ({rename_label(closest_label)} or {closest_label})')
         print()
