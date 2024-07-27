@@ -13,7 +13,7 @@ BEACON_NUM = 7
 # Default number of samples to generate.
 # Do note that this is the total number of samples, so should
 # always be a multiple of the number of beacons (3).
-DATA_POINTS_PER_BEACON = 5
+DATA_POINTS_PER_BEACON = 1
 DATA_SAMPLE_NUM = BEACON_NUM * DATA_POINTS_PER_BEACON
 
 # Use timestamp to ensure unique file.
