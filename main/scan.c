@@ -21,12 +21,17 @@
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 
-#define BEACON_NUM 3
+#define BEACON_NUM 7
 #define BEACON_SSID_MAX_LEN 32
 // A magic number to indicate if no rssi value was measured for a beacon.
 #define OUT_OF_RANGE 42
 
 static const char *TAG = "scan";
+
+typedef struct BeaconInfo {
+    uint8_t channel;
+    uint8_t ssid[BEACON_SSID_MAX_LEN];
+} BeaconInfo;
 
 // Initialize Wi-Fi as sta and set scan method
 static void wifi_scan(void)
@@ -51,11 +56,42 @@ static void wifi_scan(void)
     const wifi_ps_type_t ps_mode = WIFI_PS_NONE;
     ESP_ERROR_CHECK(esp_wifi_set_ps(ps_mode));
 
-    uint8_t BEACON_SSIDS[BEACON_NUM][BEACON_SSID_MAX_LEN] = { 
-        {'b', 'o', 'b', '1', '\0'},
-        {'b', 'o', 'b', '2', '\0'},
-        {'b', 'o', 'b', '3', '\0'},
+    BeaconInfo beacons[BEACON_NUM] = {
+        {
+            .ssid = {'b', 'o', 'b', '1', '\0'},
+            .channel = 1
+        },
+        {
+            .ssid = {'b', 'o', 'b', '2', '\0'},
+            .channel = 6
+        },
+        {
+            .ssid = {'b', 'o', 'b', '3', '\0'},
+            .channel = 11
+        },
+        {
+            .ssid = {'b', 'o', 'b', '4', '\0'},
+            .channel = 4
+        },
+        {
+            .ssid = {'b', 'o', 'b', '5', '\0'},
+            .channel = 5
+        },
+        {
+            .ssid = {'b', 'o', 'b', '6', '\0'},
+            .channel = 6
+        },
+        {
+            .ssid = {'b', 'o', 'b', '7', '\0'},
+            .channel = 7
+        },
     };
+
+    // uint8_t BEACON_SSIDS[BEACON_NUM][BEACON_SSID_MAX_LEN] = { 
+    //     {'b', 'o', 'b', '1', '\0'},
+    //     {'b', 'o', 'b', '2', '\0'},
+    //     {'b', 'o', 'b', '3', '\0'},
+    // };
 
     // Scan time per channel, in millis.
     const wifi_scan_time_t scan_time = {
@@ -77,14 +113,23 @@ static void wifi_scan(void)
 
     while (1) {
         for (int i = 0; i < BEACON_NUM; ++i) {
-            // Want to selectively scan.
-            scan_conf.ssid = BEACON_SSIDS[i];
+            // Change the scan config to selectively scan
+            // for a specific ssid on a specific channel.
+            scan_conf.ssid = beacons[i].ssid;
+            scan_conf.channel = beacons[i].channel;
+            // ESP_LOGI("info", "i: %d; channel: %d; ssid: %s", i, scan_conf.channel, scan_conf.ssid);
 
             // Holds the results of our wifi Access Point (AP) scan.
             wifi_ap_record_t ap_info;
-            esp_wifi_scan_start(&scan_conf, true);
-            uint16_t record_num = 1;
-            esp_err_t res = esp_wifi_scan_get_ap_records(&record_num, &ap_info);
+            esp_err_t scan_res = esp_wifi_scan_start(&scan_conf, true);
+            if (scan_res != ESP_OK) {
+                ESP_LOGI(TAG, "scan_start failed.");
+            }
+
+            // uint16_t record_num = 1;
+            // NOTE: Don't use ap_records. It never fails, and always
+            // returns the last valid scan result? (documentation is incorrect).
+            esp_err_t res = esp_wifi_scan_get_ap_record(&ap_info);
             if (res != ESP_OK) {
                 // Treat all errors as failure.
                 // NOTE: ESP_LOGI seems to add a newline character to the msg, 
@@ -92,7 +137,9 @@ static void wifi_scan(void)
 
                 // Obviously, since we haven't found an entry, can't use 
                 // ap_info.ssid. Use BEACON_SSIDS[i] instead.
-                ESP_LOGI(TAG, "ssid:%s;rssi:%d", BEACON_SSIDS[i], OUT_OF_RANGE);
+                // ESP_LOGI(TAG, "lolwut");
+                ESP_LOGI(TAG, "ssid:%s;rssi:%d", beacons[i].ssid, OUT_OF_RANGE);
+                // ESP_LOGI(TAG, "ssid:%s;rssi:%d", beacons[i].ssid, OUT_OF_RANGE);
             } else {
                 ESP_LOGI(TAG, "ssid:%s;rssi:%d", ap_info.ssid, ap_info.rssi);
             }

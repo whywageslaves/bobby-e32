@@ -51,7 +51,7 @@ def knn(RSSI_train, RSSI_test, k): # location indices are implicit
         # ...
     ]
     """
-    nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(RSSI_train)
+    nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree', metric="euclidean").fit(RSSI_train)
     distances, indices = nbrs.kneighbors(RSSI_test)
     return distances, indices
 
@@ -93,7 +93,8 @@ def convert_from_json(json_data: dict):
     for index, (location_id, beacons_rssi) in enumerate(combined.items()):
         # print(index, location_id, beacons_rssi)
         mapping[index] = location_id
-        beacon_fmt_data = [(sum(int(x) for x in val) // len(val)) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[1])]
+        # beacon_fmt_data = [(sum(int(x) for x in val) // len(val)) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[0])]
+        beacon_fmt_data = [max(int(x) for x in val) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[0])]
         formatted.append(beacon_fmt_data)
 
     return (np.array(formatted), mapping)
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     
     (RSSI_train, mapping) = convert_from_json(train_json_data)
     # print(RSSI_train, mapping)
-    print(mapping)
+    # print(mapping)
 
     with open("sample-data-harry-p-validating-1.json", "r") as file:
         test_json_data = json.load(file)

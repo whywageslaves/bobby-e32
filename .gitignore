@@ -1,5 +1,4 @@
 .devcontainer/*
 build/*
 serial_parser/__pycache__/*
-serial_parser/sample-data-*
 .vscode/*

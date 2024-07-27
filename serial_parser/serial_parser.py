@@ -5,15 +5,16 @@ import time
 from collections import defaultdict
 
 # The port that the ESP-32 is connected to.
-PORT = "COM15"
+PORT = "COM5"
 
 # Regex pattern to extract ssid and rssi data for a given beacon.
-DATA_REGEX = r"ssid:(bob[123]);rssi:(-?\d{1,3})"
-
+DATA_REGEX = r"ssid:(bob[1234567]);rssi:(-?\d{1,3})"
+BEACON_NUM = 7
 # Default number of samples to generate.
 # Do note that this is the total number of samples, so should
 # always be a multiple of the number of beacons (3).
-DATA_SAMPLE_NUM = 3 * 2
+DATA_POINTS_PER_BEACON = 20
+DATA_SAMPLE_NUM = BEACON_NUM * DATA_POINTS_PER_BEACON
 
 # Use timestamp to ensure unique file.
 timestamp = str(time.time())[:10]
@@ -67,7 +68,7 @@ while True:
             break
         try:
             # Convert to str (to comply with json.)
-            location_id = str(int(usr_input))
+            location_id = str(float(usr_input))
         except:
             pass
 
