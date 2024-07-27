@@ -57,26 +57,24 @@ def get_beacon_rssi_data(n: int):
 
 # Open the serial port.
 ser = serial.Serial(PORT, baudrate=115200)
-time.sleep(3)
-location_id = 1.0
 
 while True:
     # Get user input for a location id.
-    # location_id = None
-    # while not location_id:
-        # usr_input = input("Enter location id, or q to quit: ")
-        # if usr_input == "q":
-        #     location_id = "q"
-        #     break
-        # try:
-        #     # Convert to str (to comply with json.)
-        #     location_id = str(float(usr_input))
-        # except:
-        #     pass
+    location_id = None
+    while not location_id:
+        usr_input = input("Enter location id, or q to quit: ")
+        if usr_input == "q":
+            location_id = "q"
+            break
+        try:
+            # Convert to str (to comply with json.)
+            location_id = str(float(usr_input))
+        except:
+            pass
 
     # Quit program.
-    # if location_id == "q":
-    #     break
+    if location_id == "q":
+        break
 
     # Generate DATA_SAMPLE_NUM number of rssi samples at the 
     # current location.     
@@ -99,8 +97,6 @@ while True:
         with open(output_filename, "w") as outfile:
             json.dump(json_data, outfile)
     
-    location_id += 1.0
-
 ser.close()
 
 # Old code: 
