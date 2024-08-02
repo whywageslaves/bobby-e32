@@ -7,6 +7,7 @@ from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import json
 from pprint import pprint
+import math
 
 # Doesn't really do anything at the moment, just a wrapper for the sklearn function - will likely need to do
 # some post-processing to get the actual location from the indices, which we will do here.
@@ -102,24 +103,81 @@ def convert_from_json(json_data: dict):
 if __name__ == "__main__":
     with open("master-data.json", "r") as file:
         train_json_data = json.load(file)
-    
+
     (RSSI_train, mapping) = convert_from_json(train_json_data)
     # print(RSSI_train, mapping)
-    # print(mapping)
+    # print(mapping) 
 
     with open("validation.json", "r") as file:
         test_json_data = json.load(file)
 
     (RSSI_test, test_mapping) = convert_from_json(test_json_data)
     # print(RSSI_test)
+    # print(test_mapping)
+    
+    with open("demo/data/fingerprinting-locations.json", "r") as file:
+        sample_location_data = json.load(file)[0]
+        
+    with open("demo/data/validation-locations.json", "r") as file:
+        validation_location_data = json.load(file)[0]
 
-    for i, test_location_data in enumerate(RSSI_test, start=1):
-        (distances, indices) = knn(RSSI_train, np.array([test_location_data]), 3)
-        print(f"[{i}] Results for test location: {test_location_data}")
+    # ORIGIN = np.array([0.0, 0.0])
+
+    # Stores the values of the caluculated euclid error distances.
+    euclid_err_arr = []
+    
+    for i in range(len(RSSI_test)):
+        test_location_id = test_mapping[i]
+        test_location_data = RSSI_test[i]    
+
+        (distances, indices) = knn(RSSI_train, np.array([test_location_data]), 1)
+
+        # Find the estimated location id's that were generated via knn.
+        estimated_location_ids = [mapping[idx] for idx in indices[0]]
+
+        print(f"[{i}] Results for test location: {test_location_id} | {test_location_data}")
         print(f"Closest points are: {[mapping[idx] for idx in indices[0]]}")
+        
+        ground_truth_location = str(math.floor(float(test_location_id)))
+        ground_truth_coords = validation_location_data[ground_truth_location]
+        ground_truth_coords_arr = np.array([float(ground_truth_coords["x"]), float(ground_truth_coords["y"])])
+        # ground_truth_coords_arr = ORIGIN
+        print(f"Ground truth location: {ground_truth_coords} | {ground_truth_coords_arr}")
+        
+        for location_id in estimated_location_ids:
+            # Floor the location_id.
+            location = str(math.floor(float(location_id)))
+            coords: dict = sample_location_data[location]
+            coords_arr = np.array([float(coords["x"]), float(coords["y"])])
+            print(f"location_id: [{location_id}], location: [{location}]")
+            print(f"estimated_location_coordinates: {coords} | {coords_arr}")
+            
+            # Calculate error distance by getting euclidean distance
+            # between the coordinates of the estimated location, and the
+            # coordinates the data was actually sampled at.
+            
+            err_dist = np.linalg.norm(ground_truth_coords_arr - coords_arr)
+            print(f"Euclidean distance from ground truth: {err_dist} meters.")
+            
+            euclid_err_arr.append(err_dist)
+
         print(f"Distances: {distances}")
         print()
 
-# Unused code:
-# RSSI_train = np.array([[-60, -65, -70], [-55, -60, -75], [-50, -55, -80]])
-# RSSI_test = np.array([[-58, -63, -68], [-53, -58, -73]])
+
+    # Calculate results based off euclid_err_arr.
+    print("------------Results----------------")
+    N = len(RSSI_test)
+    
+    if len(euclid_err_arr) != N:
+        print("Error in calcuations ....")
+        exit(1)
+        
+    print(f"min error:      {np.min(euclid_err_arr)}")
+    print(f"max error:      {np.max(euclid_err_arr)}")
+    print(f"mean error:     {np.mean(euclid_err_arr)}")
+    print(f"median error:   {np.median(euclid_err_arr)}")
+    print(f"stddev:         {np.std(euclid_err_arr)}")
+    print(f"25 percentile:  {np.percentile(euclid_err_arr, 25)}")
+    print(f"50 percentile:  {np.percentile(euclid_err_arr, 50)}")
+    print(f"75 percentile:  {np.percentile(euclid_err_arr, 75)}")
