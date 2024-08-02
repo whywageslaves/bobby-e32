@@ -100,14 +100,14 @@ def convert_from_json(json_data: dict):
     return (np.array(formatted), mapping)
         
 if __name__ == "__main__":
-    with open("sample-data-harry-p-fingerprinting-1.json", "r") as file:
+    with open("master-data.json", "r") as file:
         train_json_data = json.load(file)
     
     (RSSI_train, mapping) = convert_from_json(train_json_data)
     # print(RSSI_train, mapping)
     # print(mapping)
 
-    with open("sample-data-harry-p-validating-1.json", "r") as file:
+    with open("validation.json", "r") as file:
         test_json_data = json.load(file)
 
     (RSSI_test, test_mapping) = convert_from_json(test_json_data)
