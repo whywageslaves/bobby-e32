@@ -16,7 +16,8 @@ from pprint import pprint
 import matplotlib
 import datetime
 
-from main.knn import KNN
+# from main.knn import KNN
+from knn import KNN
 
 # matplotlib.use("WebAgg")
 matplotlib.use("GTK3Agg")
@@ -322,6 +323,9 @@ class Plot():
         self.ax.cla()
         self.ax.imshow(self.img)
         self.ax.axis("off")
+        for legend in self.fig.legends:
+            legend.remove()
+        # self.fig.clear()
 
         # Draw all nodes.
         for node in nodes:
@@ -338,11 +342,19 @@ class Plot():
         blue_patch = mpatches.Patch(color='blue', label=f'Actual locations (curr: x={actual_x:.2f}, y={actual_y:.2f})')
         
         # Add legend to the plot
-        self.ax.legend(handles=[red_patch, blue_patch], loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        # self.ax.legend(handles=[red_patch, blue_patch], loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        # self.fig.legend(handles=[red_patch, blue_patch], loc="upper center", bbox_to_anchor=(0.5, -0.05))
+        self.fig.legend(handles=[red_patch, blue_patch], loc="lower center")
 
         # Redraw the canvas.
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
+
+        # Make all nodes dimmer.
+        for node in nodes:
+            node.dim()
+        
+        return self.ax
 
 
 TIME_BETWEEN_SAMPLES = 1.40
@@ -361,10 +373,19 @@ def run_demo():
     with open(DEMO_REAL_LOCATIONS_FILE, "r") as file:
         real_locations = json.load(file)
 
-    nodes = []
+    all_nodes = []
 
-    for sample_id, test_location_data in enumerate(RSSI_test, start=1):
+    sample_ids = range(1, len(RSSI_test) + 1)
+    fargs = [t for t in RSSI_test]
+
+    def render_frame(sample_id, test_location_data):
+
+    # for sample_id, test_location_data in enumerate(RSSI_test, start=1):
         print(f"id: {sample_id}")
+        test_location_data = test_location_data[sample_id-1]
+
+
+        print(test_location_data)
 
         # Plot estimated location.
         estimated_location_id_directional = knn.estimate_location(test_location_data)
@@ -374,7 +395,7 @@ def run_demo():
 
         print("estimated: ", (real_x, real_y))
         estimated_node = Node(real_x, real_y, color="red")
-        nodes.append(estimated_node)
+        all_nodes.append(estimated_node)
 
         # plot.add_point(real_x, real_y, color="red")
 
@@ -384,35 +405,32 @@ def run_demo():
 
         print("ground truth: ", (actual_x, actual_y))
         actual_node = Node(actual_x, actual_y, color="blue")
-        nodes.append(actual_node)
+        all_nodes.append(actual_node)
 
         # plot.add_point(actual_x, actual_y, color="blue")
 
-        plot.render_nodes(nodes, (real_x, real_y), (actual_x, actual_y))
+        # plot.render_nodes(all_nodes, (real_x, real_y), (actual_x, actual_y))
+        return plot.render_nodes(all_nodes, (real_x, real_y), (actual_x, actual_y))
 
-        # Make all nodes dimmer.
-        for node in nodes:
-            node.dim()
         
-        time_after = datetime.datetime.now()
+        # time_after = datetime.datetime.now()
 
-        time_delta = time_after - time_before
+        # time_delta = time_after - time_before
 
-        print(f"matplotlib took: {time_delta.total_seconds()}")
-        time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
+        # print(f"matplotlib took: {time_delta.total_seconds()}")
+        # time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
 
-        if time_to_sleep < 0:
-            raise Exception("matplotlib is too slow.")
+        # if time_to_sleep < 0:
+        #     raise Exception("matplotlib is too slow.")
 
-        time.sleep(time_to_sleep)
-        print(datetime.datetime.now())
+        # time.sleep(time_to_sleep)
+        # print(datetime.datetime.now())
+
 
     # animate
-    total_frames = len(data_points)
-    plot = Plot('floorplan.jpg')
-    anim = FuncAnimation(plot.fig, plot.render_frame, frames=range(total_frames),
-                         fargs=(data_points,), interval=1000, blit=False)
-    anim.save('animation.mp4', writer='ffmpeg', fps=1)
+    anim = FuncAnimation(plot.fig, render_frame, frames=sample_ids,
+                         fargs=(fargs,), interval=TIME_BETWEEN_SAMPLES*1000, blit=False)
+    anim.save('animation.mp4', writer='ffmpeg', fps=(1/TIME_BETWEEN_SAMPLES))
     plt.close(plot.fig)
 
     # for sample_id, test_location_data in enumerate(RSSI_test, start=1):

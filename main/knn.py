@@ -191,6 +191,7 @@ class KNN:
         self._evaluate_model(X_train, y_train, X_test, y_test, GT_train, GT_test, k)
 
         distances, indices = self.model.kneighbors(X_test_param)
+        # TODO: is this correct? I thought we wanted to take the average of the returned x and y locations?
         return y_train[indices[0][0]]
 
 
