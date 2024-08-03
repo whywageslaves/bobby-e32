@@ -6,15 +6,16 @@ def gaussian(x, y, n_predictions):
     """
     Fit a Gaussian Process Regressor to the provided data and make predictions.
 
-    This function creates a Gaussian Process Regressor using an RBF kernel, fits it to the input data `x` and target values `y`, 
-    and then makes predictions on the test data `X_test`.
+    This function creates a Gaussian Process Regressor using an RBF kernel, fits it to the input data `x` (location ID's) and target values `y` (RSSI values), 
+    and then returns a prediction of RSSI values.
 
     Parameters:
     x (array-like): The input data to fit the Gaussian Process Regressor. (i.e location ID or x,y coords)
     y (array-like): The target values corresponding to the input data. (i.e RSSI values)
+    n_predicitons (int): The number of predictions to make per RSSI value provided.
 
     Returns:
-    y_pred (array-like): The predicted values for the test input data `X_test`.
+    y_pred (array-like): The predicted values for the test input data.
     """
     # Create a Gaussian process regressor with an RBF kernel
     kernel = RBF() # Research states the kind of kernel doesn't really matter
@@ -27,7 +28,7 @@ def gaussian(x, y, n_predictions):
     X_test = np.array(list(range(1, len(y)+1))).reshape(-1, 1)
     y_pred = gp.sample_y(X_test, n_predictions, random_state=42)
 
-    # Return the predicted values
+    # Return the predicted RSSI values
     return y_pred
 
 
