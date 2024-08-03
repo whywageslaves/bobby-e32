@@ -14,5 +14,23 @@
     "idf.portWin": "COM5",
     "idf.pythonBinPathWin": "C:\\Users\\mango\\.espressif\\python_env\\idf5.2_py3.11_env\\Scripts\\python.exe",
     "idf.toolsPathWin": "C:\\Users\\mango\\.espressif",
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "MicroPython.executeButton": [
+        {
+            "text": "▶",
+            "tooltip": "Run",
+            "alignment": "left",
+            "command": "extension.executeFile",
+            "priority": 3.5
+        }
+    ],
+    "MicroPython.syncButton": [
+        {
+            "text": "$(sync)",
+            "tooltip": "sync",
+            "alignment": "left",
+            "command": "extension.execute",
+            "priority": 4
+        }
+    ]
 }
