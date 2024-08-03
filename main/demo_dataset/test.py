@@ -5,7 +5,7 @@ import sys
 input_file_path = sys.argv[1]
 output_file_path = sys.argv[2]
 
-# Read the JSON data from the file
+# Read the JSON demo_dataset from the file
 with open(input_file_path, 'r') as file:
     data = json.load(file)
 
@@ -18,7 +18,7 @@ for obj in data:
         obj[key]['x'] = obj[key]['y']
         obj[key]['y'] = temp
 
-# Write the modified data back to a new file
+# Write the modified demo_dataset back to a new file
 with open(output_file_path, 'w') as file:
     json.dump(data, file, indent=4)
 

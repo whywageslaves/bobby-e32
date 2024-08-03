@@ -16,16 +16,18 @@ from pprint import pprint
 import matplotlib
 import datetime
 
+from main.knn import KNN
+
 # matplotlib.use("WebAgg")
 matplotlib.use("GTK3Agg")
 
 # Doesn't really do anything at the moment, just a wrapper for the sklearn function - will likely need to do
 # some post-processing to get the actual location from the indices, which we will do here.
 
-FINGERPRINTING_DATA_FILE = "../main/dataset/training_data.json"
-DEMO_DATA_FILE = "data/demo3-rssi.json"
-FINGERPRINTING_LOCATIONS_FILE = "../main/dataset/training_data_locations.json"
-# FINGERPRINTING_LOCATIONS_FILE = "data/validation_data_locations.json"
+FINGERPRINTING_DATA_FILE = "dataset/training_data.json"
+DEMO_DATA_FILE = "demo_dataset/demo3-rssi.json"
+FINGERPRINTING_LOCATIONS_FILE = "dataset/training_data_locations.json"
+# FINGERPRINTING_LOCATIONS_FILE = "demo_dataset/validation_data_locations.json"
 
 # Map the location id to the actual (x,y) location.
 # locations = dict()
@@ -36,15 +38,15 @@ def knn(RSSI_train, RSSI_test, k):  # location indices are implicit
     Perform k-nearest neighbors classification.
 
     Parameters:
-    RSSI_train (array-like): Training data features.
-    RSSI_test (array-like): Test data features.
+    RSSI_train (array-like): Training demo_dataset features.
+    RSSI_test (array-like): Test demo_dataset features.
     k (int): Number of neighbors to consider.
 
     Returns:
-    array-like: Predicted distances to the k nearest neighbors for the test data.
-    array-like: Predicted labels for the test data.
+    array-like: Predicted distances to the k nearest neighbors for the test demo_dataset.
+    array-like: Predicted labels for the test demo_dataset.
 
-    Sample training data
+    Sample training demo_dataset
     RSSI_train = [
         [-60, -65, -70],  # RSSI values from 3 beacons for sample 1
         [-55, -60, -75],  # RSSI values from 3 beacons for sample 2
@@ -58,7 +60,7 @@ def knn(RSSI_train, RSSI_test, k):  # location indices are implicit
         # ...
     ]
 
-    # Sample test data
+    # Sample test demo_dataset
     RSSI_test = [
         [-58, -63, -68],  # RSSI values from 3 beacons for test sample 1
         [-53, -58, -73],  # RSSI values from 3 beacons for test sample 2
@@ -92,7 +94,7 @@ def convert_from_json(json_data: dict):
         combined = {}
 
         for location_data in json_data:
-            # location data is a dict containing
+            # location demo_dataset is a dict containing
             # key: location_id, val: dict (key: beacon_ssid, val: list[rssi])
             (location_id, beacons_rssi) = list(location_data.items())[0]
             if location_id in combined:
@@ -129,10 +131,10 @@ class Knn():
         (RSSI_train, mapping) = convert_from_json(train_json_data)
         self.RSSI_train = RSSI_train
         self.mapping = mapping
+        self.KNN = KNN()
 
     def estimate_location(self, test_location_data):
-        (distances, indices) = knn(self.RSSI_train, np.array([test_location_data]), 3)
-        return self.mapping[indices[0][0]]
+        return self.KNN.run_for_demo(np.array([test_location_data]))
 
 
 # Unused code:
@@ -227,7 +229,7 @@ class LocationMap():
                 self.locations[location_id] = (real_x, real_y)
 
 
-DEMO_REAL_LOCATIONS_FILE = "data/demo_real_locations.json"
+DEMO_REAL_LOCATIONS_FILE = "demo_dataset/demo_real_locations.json"
 
 
 def collect_demo_locations():

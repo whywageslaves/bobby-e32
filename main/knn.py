@@ -107,9 +107,9 @@ class KNN:
         print(f"75th percentile: {percentile_75:.2f}m")
 
     def _evaluate_model(self, X_train, y_train, X_test, y_test, GT_train, GT_test, k=1):
-        model = NearestNeighbors(n_neighbors=k, algorithm='ball_tree', metric="euclidean")
-        model.fit(X_train, y_train)
-        distances, indices = model.kneighbors(X_test)
+        self.model = NearestNeighbors(n_neighbors=k, algorithm='ball_tree', metric="euclidean")
+        self.model.fit(X_train, y_train)
+        distances, indices = self.model.kneighbors(X_test)
 
         results = []
         total_distance = 0.0
@@ -180,6 +180,18 @@ class KNN:
                 self._calculate_metrics(best_df)
 
         self._plot_result(all_beacons, k, plotting_data)
+
+    def run_for_demo(self, X_test_param):
+        GT_train, GT_test = self._load_ground_truth_data()
+        all_beacons = [f'bob{i}' for i in range(1, 8)]
+        k = 1
+        method = 'window'
+        X_train, y_train, X_test, y_test = self._load_training_test_data(all_beacons, method)
+        self._evaluate_model(X_train, y_train, X_test, y_test, GT_train, GT_test, k)
+
+        distances, indices = self.model.kneighbors(X_test_param)
+        return y_train[indices[0][0]]
+
 
 
 if __name__ == "__main__":

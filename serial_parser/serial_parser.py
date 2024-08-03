@@ -7,7 +7,7 @@ from collections import defaultdict
 # The port that the ESP-32 is connected to.
 PORT = "COM5"
 
-# Regex pattern to extract ssid and rssi data for a given beacon.
+# Regex pattern to extract ssid and rssi demo_dataset for a given beacon.
 DATA_REGEX = r"ssid:(bob[1234567]);rssi:(-?\d{1,3})"
 BEACON_NUM = 7
 # Default number of samples to generate.
@@ -34,7 +34,7 @@ def get_beacon_rssi_data(n: int):
     # off func name.
     ser.reset_input_buffer()
 
-    # Return the data in a dict of
+    # Return the demo_dataset in a dict of
     # key: ssid, val: List[rssi]
     beacon_rssi_data = defaultdict(list)
 
@@ -84,8 +84,8 @@ while True:
     print(f"Location: [{location_id}] - Finished sample collection.")
     print(f"Beacon data: {beacon_rssi_data}")
 
-    # Save the data here as json - just in case smth goes wrong
-    # data will still be saved. Not the most efficient however.
+    # Save the demo_dataset here as json - just in case smth goes wrong
+    # demo_dataset will still be saved. Not the most efficient however.
     # NOTE: Really annoying, but due to the truncation behaviour of 
     # opening a file in write (or not overwriting with append), 
     # need to open the file twice, once for input and output.
@@ -103,14 +103,14 @@ ser.close()
 # while line := ser.readline():
 #     # Decode from binary, and format.
 #     fmt_line = line.decode("utf-8").strip()
-#     data = re.search(DATA_REGEX, fmt_line)
+#     demo_dataset = re.search(DATA_REGEX, fmt_line)
     
 #     # print(f"line: {fmt_line}")
-#     # print(f"data: {data}")
-#     if not data:
+#     # print(f"demo_dataset: {demo_dataset}")
+#     if not demo_dataset:
 #         continue
 
 #     # Extract the groups from the regex match.
-#     ssid = data.group(1)
-#     rssi = data.group(2)
+#     ssid = demo_dataset.group(1)
+#     rssi = demo_dataset.group(2)
 #     print(f"Found ssid: {ssid}, rssi: {rssi}")
