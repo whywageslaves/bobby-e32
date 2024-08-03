@@ -3,3 +3,4 @@ build/*
 serial_parser/__pycache__/*
 .vscode/*
 .venv/*
+myenv
