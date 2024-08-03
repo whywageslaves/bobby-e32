@@ -10,10 +10,11 @@ from sklearn.neighbors import NearestNeighbors
 
 class KNN:
     # File path constants
-    MASTER_DATA_PATH = "dataset/training_data.json"
-    VALIDATION_DATA_PATH = "dataset/validation_data.json"
-    FINGERPRINTING_LOCATIONS_PATH = "dataset/training_data_locations.json"
-    VALIDATION_LOCATIONS_PATH = "dataset/validation_data_locations.json"
+    TRAINING_DATA = "dataset/training_data.json"
+    TRAINING_DATA_LOCATIONS = "dataset/training_data_locations.json"
+
+    VALIDATION_DATA = "dataset/validation_data.json"
+    VALIDATION_DATA_LOCATIONS = "dataset/validation_data_locations.json"
 
     def _preprocessing(self, data, beacons, method='avg'):
         x = []
@@ -51,11 +52,11 @@ class KNN:
 
     def _load_training_test_data(self, beacons, method):
         try:
-            with open(self.MASTER_DATA_PATH, "r") as file:
+            with open(self.TRAINING_DATA, "r") as file:
                 train_json_data = json.load(file)
             X_train, y_train = self._preprocessing(train_json_data, beacons, method)
 
-            with open(self.VALIDATION_DATA_PATH, "r") as file:
+            with open(self.VALIDATION_DATA, "r") as file:
                 test_json_data = json.load(file)
             X_test, y_test = self._preprocessing(test_json_data, beacons, method)
 
@@ -65,9 +66,9 @@ class KNN:
             return None, None, None, None
 
     def _load_ground_truth_data(self, ):
-        with open(self.FINGERPRINTING_LOCATIONS_PATH, "r") as file:
+        with open(self.TRAINING_DATA_LOCATIONS, "r") as file:
             GT_train = json.load(file)[0]
-        with open(self.VALIDATION_LOCATIONS_PATH, "r") as file:
+        with open(self.VALIDATION_DATA_LOCATIONS, "r") as file:
             GT_test = json.load(file)[0]
         return GT_train, GT_test
 
