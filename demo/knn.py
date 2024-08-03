@@ -4,13 +4,17 @@
 # https://scikit-learn.org/stable/modules/neighbors.html#regression for a complete guide.
 
 import time
+from typing import List
+from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from PIL import Image
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import json
 from pprint import pprint
 import matplotlib
+import datetime
 
 # matplotlib.use("WebAgg")
 matplotlib.use("GTK3Agg")
@@ -127,13 +131,7 @@ class Knn():
         self.mapping = mapping
 
     def estimate_location(self, test_location_data):
-        # # for i, test_location_data in enumerate(RSSI_test, start=1):
         (distances, indices) = knn(self.RSSI_train, np.array([test_location_data]), 3)
-        # print(f"[{id}] Results for test location: {test_location_data}")
-        # print(f"Closest points are: {[self.mapping[idx] for idx in indices[0]]}")
-        # print(f"Distances: {distances}")
-        # print()
-
         return self.mapping[indices[0][0]]
 
 
@@ -215,29 +213,6 @@ def create_plot(real_coordinates):
     plt.show()
 
 
-class Plot():
-    def __init__(self):
-        # Turn on interactive mode.
-        plt.ion()
-
-        self.img = Image.open(FLOORPLAN_FILE)
-        self.fig, self.ax = plt.subplots()
-        self.ax.imshow(self.img)
-        self.ax.axis("off")
-
-        # plt.show(block=True)
-        # plt.show()
-
-    def add_point(self, real_x, real_y, color="red"):
-        (px_x, px_y) = real_to_pixel_coord(real_x, real_y)
-        self.ax.scatter(px_x, px_y, color=color)
-        # Annotate the point
-        # self.ax.annotate(sample_id, (px_x, px_y), textcoords="offset points", xytext=(0, 10), ha='center')
-        # Redraw the canvas.
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-
 class LocationMap():
     def __init__(self):
         with open(FINGERPRINTING_LOCATIONS_FILE, "r") as file:
@@ -250,17 +225,6 @@ class LocationMap():
             for (location_id, coords) in obj.items():
                 (real_x, real_y) = (float(coords["x"]), float(coords["y"]))
                 self.locations[location_id] = (real_x, real_y)
-
-                # locations.append((location_id, float(coords["x"]), float(coords["y"])))
-                # try:
-                #     locations.append((float(coords["x"]), float(coords["y"])))
-                # except ValueError:
-                #     # Ignore coords that can't be parsed to float.
-                #     pass
-        # print(locations)
-
-        # create_plot([(3.25, 1.3), (0, 0), (8.2, 0)])
-        # create_plot(locations)
 
 
 DEMO_REAL_LOCATIONS_FILE = "data/demo_real_locations.json"
@@ -316,7 +280,70 @@ def collect_demo_locations():
         json.dump(real_locations, file, indent=4)
 
 
-TIME_BETWEEN_SAMPLES = 1.46
+class Node:
+    def __init__(self, real_x, real_y, color):
+        self.color = color
+        self.real_x = real_x
+        self.real_y = real_y
+        self.opacity = 1.0
+        self.size = 100.0
+
+    def dim(self):
+        self.opacity *= 0.8
+        self.size *= 0.5
+
+
+class Plot():
+    def __init__(self):
+        # Turn on interactive mode.
+        plt.ion()
+
+        self.img = Image.open(FLOORPLAN_FILE)
+        self.fig, self.ax = plt.subplots()
+        self.ax.imshow(self.img)
+        self.ax.axis("off")
+
+        # plt.show(block=True)
+        # plt.show()
+
+    # def add_point(self, real_x, real_y, color="red"):
+    #     (px_x, px_y) = real_to_pixel_coord(real_x, real_y)
+    #     self.ax.scatter(px_x, px_y, color=color)
+    #     # Annotate the point
+    #     # self.ax.annotate(sample_id, (px_x, px_y), textcoords="offset points", xytext=(0, 10), ha='center')
+    #     # Redraw the canvas.
+    #     self.fig.canvas.draw()
+    #     self.fig.canvas.flush_events()
+
+    def render_nodes(self, nodes: List[Node], estimated_location, actual_location):
+        # Clear canvas.
+        self.ax.cla()
+        self.ax.imshow(self.img)
+        self.ax.axis("off")
+
+        # Draw all nodes.
+        for node in nodes:
+            (px_x, px_y) = real_to_pixel_coord(node.real_x, node.real_y)
+            self.ax.scatter(px_x, px_y, color=node.color, alpha=node.opacity, s=node.size)
+        
+        # self.fig.text(0, 0, "red dots: estimated location, blue dots: actual location")
+        # self.ax.legend(["red", "blue"], ["test", "test2"])
+
+        # Create custom legend handles
+        (estimated_x, estimated_y) = estimated_location
+        red_patch = mpatches.Patch(color='red', label=f'Estimated locations (curr: x={estimated_x:.2f}, y={estimated_y:.2f})')
+        (actual_x, actual_y) = actual_location
+        blue_patch = mpatches.Patch(color='blue', label=f'Actual locations (curr: x={actual_x:.2f}, y={actual_y:.2f})')
+        
+        # Add legend to the plot
+        self.ax.legend(handles=[red_patch, blue_patch], loc="upper center", bbox_to_anchor=(0.5, -0.05))
+
+        # Redraw the canvas.
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
+
+TIME_BETWEEN_SAMPLES = 1.40
 
 
 def run_demo():
@@ -332,6 +359,8 @@ def run_demo():
     with open(DEMO_REAL_LOCATIONS_FILE, "r") as file:
         real_locations = json.load(file)
 
+    nodes = []
+
     for sample_id, test_location_data in enumerate(RSSI_test, start=1):
         print(f"id: {sample_id}")
 
@@ -340,26 +369,98 @@ def run_demo():
         # Strip out direction.
         estimated_location_id = str(estimated_location_id_directional).split(".")[0]
         (real_x, real_y) = location_map.locations[estimated_location_id]
+
         print("estimated: ", (real_x, real_y))
-        plot.add_point(real_x, real_y, color="red")
+        estimated_node = Node(real_x, real_y, color="red")
+        nodes.append(estimated_node)
+
+        # plot.add_point(real_x, real_y, color="red")
 
         # Plot actual ground truth location.
         real_location = real_locations[str(sample_id)]
         (actual_x, actual_y) = (real_location["x"], real_location["y"])
+
         print("ground truth: ", (actual_x, actual_y))
-        plot.add_point(actual_x, actual_y, color="blue")
+        actual_node = Node(actual_x, actual_y, color="blue")
+        nodes.append(actual_node)
 
-        time.sleep(TIME_BETWEEN_SAMPLES)
+        # plot.add_point(actual_x, actual_y, color="blue")
 
-        # run_knn(test_location_data)
-        # (distances, indices) = knn(RSSI_train, np.array([test_location_data]), 3)
-        # print(f"[{id}] Results for test location: {test_location_data}")
-        # print(f"Closest points are: {[mapping[idx] for idx in indices[0]]}")
-        # print(f"Distances: {distances}")
-        # print()
+        plot.render_nodes(nodes, (real_x, real_y), (actual_x, actual_y))
 
-    # print_coordinates_in_floorplan()
+        # Make all nodes dimmer.
+        for node in nodes:
+            node.dim()
+        
+        time_after = datetime.datetime.now()
 
+        time_delta = time_after - time_before
+
+        print(f"matplotlib took: {time_delta.total_seconds()}")
+        time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
+
+        if time_to_sleep < 0:
+            raise Exception("matplotlib is too slow.")
+
+        time.sleep(time_to_sleep)
+        print(datetime.datetime.now())
+
+    # animate
+    total_frames = len(data_points)
+    plot = Plot('floorplan.jpg')
+    anim = FuncAnimation(plot.fig, plot.render_frame, frames=range(total_frames),
+                         fargs=(data_points,), interval=1000, blit=False)
+    anim.save('animation.mp4', writer='ffmpeg', fps=1)
+    plt.close(plot.fig)
+
+    # for sample_id, test_location_data in enumerate(RSSI_test, start=1):
+    #     time_before = datetime.datetime.now()
+
+    #     print(f"id: {sample_id}")
+
+    #     # Plot estimated location.
+    #     estimated_location_id_directional = knn.estimate_location(test_location_data)
+    #     # Strip out direction.
+    #     estimated_location_id = str(estimated_location_id_directional).split(".")[0]
+    #     (real_x, real_y) = location_map.locations[estimated_location_id]
+
+    #     print("estimated: ", (real_x, real_y))
+    #     estimated_node = Node(real_x, real_y, color="red")
+    #     nodes.append(estimated_node)
+
+    #     # plot.add_point(real_x, real_y, color="red")
+
+    #     # Plot actual ground truth location.
+    #     real_location = real_locations[str(sample_id)]
+    #     (actual_x, actual_y) = (real_location["x"], real_location["y"])
+
+    #     print("ground truth: ", (actual_x, actual_y))
+    #     actual_node = Node(actual_x, actual_y, color="blue")
+    #     nodes.append(actual_node)
+
+    #     # plot.add_point(actual_x, actual_y, color="blue")
+
+    #     plot.render_nodes(nodes, (real_x, real_y), (actual_x, actual_y))
+
+    #     # Make all nodes dimmer.
+    #     for node in nodes:
+    #         node.dim()
+        
+    #     time_after = datetime.datetime.now()
+
+    #     time_delta = time_after - time_before
+
+    #     print(f"matplotlib took: {time_delta.total_seconds()}")
+    #     time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
+
+    #     if time_to_sleep < 0:
+    #         raise Exception("matplotlib is too slow.")
+
+    #     time.sleep(time_to_sleep)
+    #     print(datetime.datetime.now())
+
+
+# def animate(data_points):
 
 def main():
     run_demo()
