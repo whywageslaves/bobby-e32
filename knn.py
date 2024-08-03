@@ -95,7 +95,20 @@ def convert_from_json(json_data: dict):
         # print(index, location_id, beacons_rssi)
         mapping[index] = location_id
         # beacon_fmt_data = [(sum(int(x) for x in val) // len(val)) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[0])]
-        beacon_fmt_data = [max(int(x) for x in val) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[0])]
+        
+        rssi_sorted = sorted(beacons_rssi.items(), key=lambda item: item[0])
+        beacon_fmt_data = []
+        for (k, v) in rssi_sorted:
+            rssi_values = []
+            for rssi_val in v:
+                rssi_val = int(rssi_val)
+                if rssi_val == 42:
+                    rssi_values.append(-200);
+                else:
+                    rssi_values.append(rssi_val)
+            beacon_fmt_data.append(max(rssi_values))
+        
+        # beacon_fmt_data = [max(int(x) for x in val) for (_, val) in sorted(beacons_rssi.items(), key=lambda item: item[0])]
         formatted.append(beacon_fmt_data)
 
     return (np.array(formatted), mapping)
