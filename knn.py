@@ -151,7 +151,7 @@ def main():
     all_beacons = [f'bob{i}' for i in range(1, 8)]
     best_results = {'avg': {}, 'max': {}, 'window': {}}
     plotting_data = {'avg': [], 'max': [], 'window': []}
-    k = 1
+    k = 4
 
     for method in ['avg', 'max', 'window']:
     # for method in ['window']:
