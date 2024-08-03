@@ -10,10 +10,10 @@ from sklearn.neighbors import NearestNeighbors
 
 class KNN:
     # File path constants
-    MASTER_DATA_PATH = "master-data.json"
-    VALIDATION_DATA_PATH = "validation.json"
-    FINGERPRINTING_LOCATIONS_PATH = "demo/data/fingerprinting-locations.json"
-    VALIDATION_LOCATIONS_PATH = "demo/data/validation-locations.json"
+    MASTER_DATA_PATH = "dataset/training_data.json"
+    VALIDATION_DATA_PATH = "dataset/validation_data.json"
+    FINGERPRINTING_LOCATIONS_PATH = "dataset/training_data_locations.json"
+    VALIDATION_LOCATIONS_PATH = "dataset/validation_data_locations.json"
 
     def _preprocessing(self, data, beacons, method='avg'):
         x = []

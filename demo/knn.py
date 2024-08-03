@@ -22,10 +22,10 @@ matplotlib.use("GTK3Agg")
 # Doesn't really do anything at the moment, just a wrapper for the sklearn function - will likely need to do
 # some post-processing to get the actual location from the indices, which we will do here.
 
-FINGERPRINTING_DATA_FILE = "../master-data.json"
+FINGERPRINTING_DATA_FILE = "../main/dataset/training_data.json"
 DEMO_DATA_FILE = "data/demo3-rssi.json"
-FINGERPRINTING_LOCATIONS_FILE = "data/fingerprinting-locations.json"
-# FINGERPRINTING_LOCATIONS_FILE = "data/validation-locations.json"
+FINGERPRINTING_LOCATIONS_FILE = "../main/dataset/training_data_locations.json"
+# FINGERPRINTING_LOCATIONS_FILE = "data/validation_data_locations.json"
 
 # Map the location id to the actual (x,y) location.
 # locations = dict()
