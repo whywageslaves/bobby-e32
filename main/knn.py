@@ -1,3 +1,4 @@
+from enum import Enum
 import itertools
 import json
 import math
@@ -7,14 +8,25 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 
+class FingerprintingData(Enum):
+    Full = 1,
+    Half = 2,
+    HalfLLM = 3
+
+# Half of the fingerprinting data to keep, to ensure equal density.
+HALF_IDS = set([1, 4, 6, 7, 9, 11, 15, 16, 18, 20, 22, 24, 25, 27, 29, 31])
 
 class KNN:
     # File path constants
     TRAINING_DATA = "dataset/training_data.json"
+    LLM_TRAINING_DATA = "dataset/llm_training_data.json"
     TRAINING_DATA_LOCATIONS = "dataset/training_data_locations.json"
 
     VALIDATION_DATA = "dataset/validation_data.json"
     VALIDATION_DATA_LOCATIONS = "dataset/validation_data_locations.json"
+
+    def __init__(self, fingerprinting_data=FingerprintingData.Full):
+        self.fingerprinting_data = fingerprinting_data
 
     def _preprocessing(self, data, beacons, method='avg'):
         x = []
@@ -54,6 +66,25 @@ class KNN:
         try:
             with open(self.TRAINING_DATA, "r") as file:
                 train_json_data = json.load(file)
+
+                def parse_id(s):
+                    return int(s.split(".")[0])
+
+                match self.fingerprinting_data:
+                    case FingerprintingData.Full:
+                        train_json_data = train_json_data
+
+                    case FingerprintingData.Half:
+                        train_json_data = [{id: v for id, v in d.items() if parse_id(id) in HALF_IDS} for d in train_json_data]
+
+                    case FingerprintingData.HalfLLM:
+                        with open(self.LLM_TRAINING_DATA, "r") as file:
+                            llm_train_json_data = json.load(file)
+                            train_json_data = llm_train_json_data
+                
+                # print(train_json_data)
+
+
             X_train, y_train = self._preprocessing(train_json_data, beacons, method)
 
             with open(self.VALIDATION_DATA, "r") as file:
@@ -68,6 +99,18 @@ class KNN:
     def _load_ground_truth_data(self, ):
         with open(self.TRAINING_DATA_LOCATIONS, "r") as file:
             GT_train = json.load(file)[0]
+            match self.fingerprinting_data:
+                case FingerprintingData.Full:
+                    GT_train = GT_train
+
+                case FingerprintingData.Half:
+                    GT_train = {id:xy for (id, xy) in GT_train.items() if int(id) in HALF_IDS}
+
+                case FingerprintingData.HalfLLM:
+                    GT_train = GT_train
+                    # GT_train = {id:xy for (id, xy) in GT_train.items() if int(id) in HALF_IDS}
+
+            print(GT_train)
         with open(self.VALIDATION_DATA_LOCATIONS, "r") as file:
             GT_test = json.load(file)[0]
         return GT_train, GT_test
@@ -197,5 +240,7 @@ class KNN:
 
 
 if __name__ == "__main__":
-    main = KNN()
+    # main = KNN()
+    # main = KNN(FingerprintingData.Half)
+    main = KNN(FingerprintingData.HalfLLM)
     main.run_everything()

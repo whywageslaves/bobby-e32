@@ -1,0 +1,8 @@
+We are working on a localization project using RSSI.
+We create a fingerprinting map of a house by measuring the RSSI values at different locations.
+You are provided some incomplete fingerprinting data (as a json file), where half of the required samples with ids between 1 and 32 (both inclusive) are required.
+Note that each id has the format "<id>.<dir>", where dir is 1-4. Please generate all 4 directions for each id, just like the input data.
+You are also provided with an image of the floorplan, along with the locations of all of the samples you should choose.
+Finally, you are provided with the real location data.
+Please generate the remaining half of the values, and return the complete data-set as JSON as a downloadable file.
+Your output json must be formatted exactly like my input json.
