@@ -16,67 +16,14 @@ from pprint import pprint
 import matplotlib
 import datetime
 
-# from main.knn import KNN
 from knn import KNN
 
 # matplotlib.use("WebAgg")
 matplotlib.use("GTK3Agg")
 
-# Doesn't really do anything at the moment, just a wrapper for the sklearn function - will likely need to do
-# some post-processing to get the actual location from the indices, which we will do here.
-
 FINGERPRINTING_DATA_FILE = "dataset/training_data.json"
 DEMO_DATA_FILE = "demo_dataset/demo3-rssi.json"
 FINGERPRINTING_LOCATIONS_FILE = "dataset/training_data_locations.json"
-# FINGERPRINTING_LOCATIONS_FILE = "demo_dataset/validation_data_locations.json"
-
-# Map the location id to the actual (x,y) location.
-# locations = dict()
-
-
-def knn(RSSI_train, RSSI_test, k):  # location indices are implicit
-    """
-    Perform k-nearest neighbors classification.
-
-    Parameters:
-    RSSI_train (array-like): Training demo_dataset features.
-    RSSI_test (array-like): Test demo_dataset features.
-    k (int): Number of neighbors to consider.
-
-    Returns:
-    array-like: Predicted distances to the k nearest neighbors for the test demo_dataset.
-    array-like: Predicted labels for the test demo_dataset.
-
-    Sample training demo_dataset
-    RSSI_train = [
-        [-60, -65, -70],  # RSSI values from 3 beacons for sample 1
-        [-55, -60, -75],  # RSSI values from 3 beacons for sample 2
-        # ...
-    ]
-
-    # LOCATION IS IMPLICIT
-    LOCATION_train = [
-        1,  # Location label for sample 1
-        2,  # Location label for sample 2
-        # ...
-    ]
-
-    # Sample test demo_dataset
-    RSSI_test = [
-        [-58, -63, -68],  # RSSI values from 3 beacons for test sample 1
-        [-53, -58, -73],  # RSSI values from 3 beacons for test sample 2
-        # ...
-    ]
-
-    label_test = [
-        1,  # Location label for test sample 1
-        2,  # Location label for test sample 2
-        # ...
-    ]
-    """
-    nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree', metric="euclidean").fit(RSSI_train)
-    distances, indices = nbrs.kneighbors(RSSI_test)
-    return distances, indices
 
 
 def convert_from_json(json_data: dict):
@@ -138,9 +85,6 @@ class Knn():
         return self.KNN.run_for_demo(np.array([test_location_data]))
 
 
-# Unused code:
-# RSSI_train = np.array([[-60, -65, -70], [-55, -60, -75], [-50, -55, -80]])
-# RSSI_test = np.array([[-58, -63, -68], [-53, -58, -73]])
 
 
 FLOORPLAN_FILE = "images/floorplan.png"
@@ -379,13 +323,8 @@ def run_demo():
     fargs = [t for t in RSSI_test]
 
     def render_frame(sample_id, test_location_data):
-
-    # for sample_id, test_location_data in enumerate(RSSI_test, start=1):
         print(f"id: {sample_id}")
         test_location_data = test_location_data[sample_id-1]
-
-
-        print(test_location_data)
 
         # Plot estimated location.
         estimated_location_id_directional = knn.estimate_location(test_location_data)
@@ -397,8 +336,6 @@ def run_demo():
         estimated_node = Node(real_x, real_y, color="red")
         all_nodes.append(estimated_node)
 
-        # plot.add_point(real_x, real_y, color="red")
-
         # Plot actual ground truth location.
         real_location = real_locations[str(sample_id)]
         (actual_x, actual_y) = (real_location["x"], real_location["y"])
@@ -407,24 +344,8 @@ def run_demo():
         actual_node = Node(actual_x, actual_y, color="blue")
         all_nodes.append(actual_node)
 
-        # plot.add_point(actual_x, actual_y, color="blue")
-
-        # plot.render_nodes(all_nodes, (real_x, real_y), (actual_x, actual_y))
         return plot.render_nodes(all_nodes, (real_x, real_y), (actual_x, actual_y))
 
-        
-        # time_after = datetime.datetime.now()
-
-        # time_delta = time_after - time_before
-
-        # print(f"matplotlib took: {time_delta.total_seconds()}")
-        # time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
-
-        # if time_to_sleep < 0:
-        #     raise Exception("matplotlib is too slow.")
-
-        # time.sleep(time_to_sleep)
-        # print(datetime.datetime.now())
 
 
     # animate
@@ -433,54 +354,6 @@ def run_demo():
     anim.save('animation.mp4', writer='ffmpeg', fps=(1/TIME_BETWEEN_SAMPLES))
     plt.close(plot.fig)
 
-    # for sample_id, test_location_data in enumerate(RSSI_test, start=1):
-    #     time_before = datetime.datetime.now()
-
-    #     print(f"id: {sample_id}")
-
-    #     # Plot estimated location.
-    #     estimated_location_id_directional = knn.estimate_location(test_location_data)
-    #     # Strip out direction.
-    #     estimated_location_id = str(estimated_location_id_directional).split(".")[0]
-    #     (real_x, real_y) = location_map.locations[estimated_location_id]
-
-    #     print("estimated: ", (real_x, real_y))
-    #     estimated_node = Node(real_x, real_y, color="red")
-    #     nodes.append(estimated_node)
-
-    #     # plot.add_point(real_x, real_y, color="red")
-
-    #     # Plot actual ground truth location.
-    #     real_location = real_locations[str(sample_id)]
-    #     (actual_x, actual_y) = (real_location["x"], real_location["y"])
-
-    #     print("ground truth: ", (actual_x, actual_y))
-    #     actual_node = Node(actual_x, actual_y, color="blue")
-    #     nodes.append(actual_node)
-
-    #     # plot.add_point(actual_x, actual_y, color="blue")
-
-    #     plot.render_nodes(nodes, (real_x, real_y), (actual_x, actual_y))
-
-    #     # Make all nodes dimmer.
-    #     for node in nodes:
-    #         node.dim()
-        
-    #     time_after = datetime.datetime.now()
-
-    #     time_delta = time_after - time_before
-
-    #     print(f"matplotlib took: {time_delta.total_seconds()}")
-    #     time_to_sleep = TIME_BETWEEN_SAMPLES - time_delta.total_seconds()
-
-    #     if time_to_sleep < 0:
-    #         raise Exception("matplotlib is too slow.")
-
-    #     time.sleep(time_to_sleep)
-    #     print(datetime.datetime.now())
-
-
-# def animate(data_points):
 
 def main():
     run_demo()
