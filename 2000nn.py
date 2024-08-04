@@ -8,6 +8,7 @@ import numpy as np
 import json
 from pprint import pprint
 import math
+import gaussian as gauss
 
 # Doesn't really do anything at the moment, just a wrapper for the sklearn function - will likely need to do
 # some post-processing to get the actual location from the indices, which we will do here.
@@ -17,7 +18,7 @@ def knn(RSSI_train, RSSI_test, k): # location indices are implicit
     distances, indices = nbrs.kneighbors(RSSI_test)
     return distances, indices
 
-def convert_from_json(json_data, method="max"):
+def convert_from_json(json_data, skip, method="max"):
     """
     Converts from the json format captured by the ESP-32 into the np arrays
     required for the knn algorithm.
@@ -37,11 +38,13 @@ def convert_from_json(json_data, method="max"):
     
     formatted = []
     mapping = {}
-    
+    i_counter = 0
     for idx, (location_id, beacons_rssi) in enumerate(beacon_rssi_data.items()):
+        if idx % skip != 0:
+            continue
         # location_id = location[0]
         # beacons_rssi = location[1]
-        mapping[idx] = location_id
+        mapping[len(formatted)] = location_id
         
         beacon_filter = [1, 2, 3, 4, 5, 6, 7]
         beacon_filter.sort()
@@ -64,9 +67,9 @@ def convert_from_json(json_data, method="max"):
         
         formatted.append(curr_location_beacon_fmt)                            
 
-    return (np.array(formatted), mapping)
+    return (formatted, mapping)
     
-def pre_gausiann_data(beacons_filter: set):
+def pre_gausiann_data(beacons_filter: set, skip):
     # The `json_data` is a list of dictionaries, where
     # key: location_id, val: dict of beacons to a list of rssi values.
     with open("gaussian-master-data.json", "r") as file:
@@ -87,13 +90,14 @@ def pre_gausiann_data(beacons_filter: set):
     for idx, (location_id, beacons_rssi) in enumerate(beacon_rssi_data.items()):
         # beacon_filter = [1, 2, 3, 4, 5, 6, 7]
         # beacon_filter.sort()
-        
+        if idx % skip != 0:
+            continue
         # Find coordinates of current location.
         location = str(math.floor(float(location_id)))
         coords: dict = sample_location_data[location]
         coords_arr = np.array([float(coords["x"]), float(coords["y"])])
-        print(f"location_id: [{location_id}], location: [{location}]")
-        print(f"estimated_location_coordinates: {coords} | {coords_arr}")
+        #print(f"location_id: [{location_id}], location: [{location}]")
+        #print(f"estimated_location_coordinates: {coords} | {coords_arr}")
         
         temp_beacon_filter = list(beacons_filter)
         temp_beacon_filter.sort()
@@ -106,7 +110,7 @@ def pre_gausiann_data(beacons_filter: set):
         # Use zip to generate a tuple of len(temp_beacon_filter), which represents
         # the rssi values of (bob1, bob2, bob3, ...)
         generated_samples = list(zip(*filtered_beacons_rssi))
-        print(len(generated_samples))
+        #print(len(generated_samples))
         
         for generated_sample in generated_samples:
             if OOB_VALUE in generated_sample:
@@ -126,12 +130,13 @@ if __name__ == "__main__":
 
     with open("validation.json", "r") as file:
         test_json_data = json.load(file)
-
-    (RSSI_train, mapping) = convert_from_json(train_json_data)
-    (RSSI_test, test_mapping) = convert_from_json(test_json_data)
+    n_locations_divider = 2
+    (RSSI_train, mapping) = convert_from_json(train_json_data, 1)#n_locations_divider)
+    (RSSI_test, test_mapping) = convert_from_json(test_json_data, 1)
     
     with open("demo/data/fingerprinting-locations.json", "r") as file:
         sample_location_data = json.load(file)[0]
+        
         
     with open("demo/data/validation-locations.json", "r") as file:
         validation_location_data = json.load(file)[0]
@@ -139,12 +144,80 @@ if __name__ == "__main__":
     # Stores the values of the caluculated euclid error distances.
     euclid_err_arr = []
     
-    K = 4
-    
+    K = 1
+    """
+    n_locations_divider = 2
     # lakjsdfljasd;lfkjasd
     beacons_filter = {1, 2, 3, 4, 5, 6, 7}
-    (LOC_train, RSSI_train) = pre_gausiann_data(beacons_filter)
-    exit(1)
+    (LOC_train, RSSI_train_processed) = pre_gausiann_data(beacons_filter, n_locations_divider)
+    #(tmp_LOC_train, tmp_RSSI_train) = pre_gausiann_data(beacons_filter, 1)
+    if len(LOC_train) != len(RSSI_train_processed):
+        print("Error in pre_gaussian_data function.")
+        exit(1)
+    
+    #[print(x) for x in LOC_train]
+    #[print(x) for x in tmp_LOC_train]
+    #print(len(LOC_train))
+    #print(len(tmp_LOC_train))
+
+    x, y, fake_RSSI = gauss.gaussian_gen_data(LOC_train, RSSI_train_processed, 5)
+    
+    #pprint(sample_location_data)
+    
+    LENGTH_RSSI_TRAIN = len(RSSI_train)
+    id_counter = 100
+    for i in range(len(fake_RSSI)):
+        x_a = str(x[i])
+        y_a = str(y[i])
+        new_coord = {"x": x_a, "y": y_a}
+        sample_location_data[str(id_counter)] = new_coord
+        new_RSSI_val = []
+        for beacon in fake_RSSI[i]:
+            new_RSSI_val.append(np.max(beacon))
+        RSSI_train.append(new_RSSI_val)
+        
+        mapping[LENGTH_RSSI_TRAIN + i] = str(id_counter)
+        id_counter += 1
+
+    #print(RSSI_train)
+    #print(mapping)
+    #print(RSSI_train)
+    #print(len(RSSI_train))
+    #print(LENGTH_RSSI_TRAIN)
+    #print(len(fake_RSSI))
+    #print(sample_location_data)"""
+    RSSI_train = np.array(RSSI_train)
+    #p1 = np.array([-63, -68, -60, -69, -73, -63, -68])
+    #p2 = np.array([-64, -70, -68, -63, -71, -71, -73])
+    #print(np.linalg.norm(p1 - p2))
+    
+    #for i in range(len(fake_RSSI)):
+    #    print(f"x::{x[i]}, y::{y[i]}, fake_RSSI::{fake_RSSI[i]}")
+    
+    #[print(x) for x in fake_RSSI]
+    #print(len(RSSI_train))
+    #print(len(fake_RSSI))
+    
+    #print(RSSI_test[:15])
+    #[[bob1, bob2, bob3, bob4, bob5, bob6, bob7], [bob1, bob2, bob3, bob4, bob5, bob6, bob7]]
+    #[[bob1, bob1, ..., bob1], [bob2, bob2], ...]
+    #predicted_locations = gauss.gaussian_predict_location(RSSI_train[:1000], LOC_train[:1000], RSSI_test[:1000])
+    
+    """
+    euclid_err_arr = []
+    for i in range(len(RSSI_test)):
+        test_location_id = test_mapping[i]
+        test_location_data = RSSI_test[i]
+        ground_truth_location = str(math.floor(float(test_location_id)))
+        ground_truth_coords = validation_location_data[ground_truth_location]
+        ground_truth_coords_arr = np.array([float(ground_truth_coords["x"]), float(ground_truth_coords["y"])])
+        k_err_dist = np.linalg.norm(ground_truth_coords_arr - predicted_locations)
+        euclid_err_arr.append(k_err_dist)
+    
+    print(f"min error:      {np.min(euclid_err_arr)}")
+    #[print(x) for x in predicted_locations]
+    """
+    #exit(1)
     
     for i in range(len(RSSI_test)):
         test_location_id = test_mapping[i]
